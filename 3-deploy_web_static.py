@@ -10,6 +10,7 @@ import os
 
 env.hosts = ['18.209.7.164', '54.211.25.155']
 
+
 def do_pack():
     """Packs the contents of web_static into a tar archive"""
     try:
@@ -21,6 +22,7 @@ def do_pack():
         return file_path
     except:
         return None
+
 
 def do_deploy(archive_path):
     """Deploys the web_static archive to the web servers"""
@@ -40,6 +42,7 @@ def do_deploy(archive_path):
         return True
     except:
         return False
+
 
 def deploy():
     """Creates and distributes an archive to web servers"""
