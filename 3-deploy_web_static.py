@@ -8,45 +8,64 @@ using the function deploy
 from fabric.api import *
 import os
 
-env.hosts = ['18.209.7.164', '54.211.25.155']
+env.hosts = ['34.229.149.26', '54.224.98.80']
 
 
 def do_pack():
-    """Packs the contents of web_static into a tar archive"""
-    try:
-        if not os.path.exists("versions"):
-            os.mkdir("versions")
-        timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        file_path = "versions/web_static_{}.tgz".format(timestamp)
-        local("tar -cvzf {} web_static".format(file_path))
-        return file_path
-    except:
+    """Create a tar gzipped archive of the directory web_static."""
+    dt = datetime.utcnow()
+    file = "versions/web_static_{}{}{}{}{}{}.tgz".format(dt.year,
+                                                         dt.month,
+                                                         dt.day,
+                                                         dt.hour,
+                                                         dt.minute,
+                                                         dt.second)
+    if os.path.isdir("versions") is False:
+        if local("mkdir -p versions").failed is True:
+            return None
+    if local("tar -cvzf {} web_static".format(file)).failed is True:
         return None
+    return file
 
 
 def do_deploy(archive_path):
-    """Deploys the web_static archive to the web servers"""
-    if not os.path.exists(archive_path):
+    """Distributes an archive to a web server.
+    """
+    if os.path.isfile(archive_path) is False:
         return False
-    try:
-        put(archive_path, "/tmp/")
-        file_name = os.path.basename(archive_path)
-        dir_name = "/data/web_static/releases/" + file_name[:-4]
-        run("mkdir -p {}".format(dir_name))
-        run("tar -xzf /tmp/{} -C {}".format(file_name, dir_name))
-        run("rm /tmp/{}".format(file_name))
-        run("mv {}/web_static/* {}/".format(dir_name, dir_name))
-        run("rm -rf {}/web_static".format(dir_name))
-        run("rm -rf /data/web_static/current")
-        run("ln -s {} /data/web_static/current".format(dir_name))
-        return True
-    except:
+    file = archive_path.split("/")[-1]
+    name = file.split(".")[0]
+
+    if put(archive_path, "/tmp/{}".format(file)).failed is True:
         return False
+    if run("rm -rf /data/web_static/releases/{}/".
+           format(name)).failed is True:
+        return False
+    if run("mkdir -p /data/web_static/releases/{}/".
+           format(name)).failed is True:
+        return False
+    if run("tar -xzf /tmp/{} -C /data/web_static/releases/{}/".
+           format(file, name)).failed is True:
+        return False
+    if run("rm /tmp/{}".format(file)).failed is True:
+        return False
+    if run("mv /data/web_static/releases/{}/web_static/* "
+           "/data/web_static/releases/{}/".format(name, name)).failed is True:
+        return False
+    if run("rm -rf /data/web_static/releases/{}/web_static".
+           format(name)).failed is True:
+        return False
+    if run("rm -rf /data/web_static/current").failed is True:
+        return False
+    if run("ln -s /data/web_static/releases/{}/ /data/web_static/current".
+           format(name)).failed is True:
+        return False
+    return True
 
 
 def deploy():
-    """Creates and distributes an archive to web servers"""
-    archive_path = do_pack()
-    if not archive_path:
+    """Create and distribute an archive to a web server."""
+    file = do_pack()
+    if file is None:
         return False
-    return do_deploy(archive_path)
+    return do_deploy(file)
