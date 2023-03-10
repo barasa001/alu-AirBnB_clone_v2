@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+# -*- coding: utf-8 -*-
 """compress a folder"""
 from datetime import datetime
 from fabric.api import *
