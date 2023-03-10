@@ -13,68 +13,48 @@ env.user = 'ubuntu'
 env.hosts = ['34.229.149.26', '54.224.98.80']
 
 
+@runs_once
 def do_pack():
-    """compress files in an archive"""
+    """Generates a .tgz archive from the contents
+    of the web_static folder of this repository.
+    """
+
+    d = datetime.now()
+    now = d.strftime('%Y%m%d%H%M%S')
+    path = "versions/web_static_{}.tgz".format(now)
+
     local("mkdir -p versions")
-    filename = "versions/web_static_{}.tgz".format(datetime.strftime(
-        datetime.now(),
-        "%Y%m%d%H%M%S"))
-    result = local("tar -cvzf {} web_static"
-                   .format(filename))
-    if result.failed:
-        return None
-    return filename
+    local("tar -czvf {} web_static".format(path))
+    return path
 
 
 def do_deploy(archive_path):
-    """For the deploy"""
-    if not os.path.isfile(archive_path):
-        return False
+    """Distributes a .tgz archive through web servers
+    """
 
-    filename_regex = re.compile(r'[^/]+(?=\.tgz$)')
-    match = filename_regex.search(archive_path)
+    if path.exists(archive_path):
+        archive = archive_path.split('/')[1]
+        a_path = "/tmp/{}".format(archive)
+        folder = archive.split('.')[0]
+        f_path = "/data/web_static/releases/{}/".format(folder)
 
-    archive_filename = match.group(0)
-    result = put(archive_path, "/tmp/{}.tgz".format(archive_filename))
-    if result.failed:
-        return False
-    result = run(
-        "mkdir -p /data/web_static/releases/{}/".format(archive_filename))
-    if result.failed:
-        return False
-    result = run("tar -xzf /tmp/{}.tgz -C /data/web_static/releases/{}/"
-                 .format(archive_filename, archive_filename))
-    if result.failed:
-        return False
-    result = run("rm /tmp/{}.tgz".format(archive_filename))
-    if result.failed:
-        return False
-    result = run("mv /data/web_static/releases/{}"
-                 "/web_static/* /data/web_static/releases/{}/"
-                 .format(archive_filename, archive_filename))
-    if result.failed:
-        return False
-    result = run("rm -rf /data/web_static/releases/{}/web_static"
-                 .format(archive_filename))
-    if result.failed:
-        return False
+        put(archive_path, a_path)
+        run("mkdir -p {}".format(f_path))
+        run("tar -xzf {} -C {}".format(a_path, f_path))
+        run("rm {}".format(a_path))
+        run("mv -f {}web_static/* {}".format(f_path, f_path))
+        run("rm -rf {}web_static".format(f_path))
+        run("rm -rf /data/web_static/current")
+        run("ln -s {} /data/web_static/current".format(f_path))
 
-    result = run("rm -rf /data/web_static/current")
-    if result.failed:
-        return False
+        return True
 
-    result = run("ln -s /data/web_static/releases/{}/ /data/web_static/current"
-                 .format(archive_filename))
-    if result.failed:
-        return False
-
-    return True
+    return False
 
 
 def deploy():
-    """Deploy"""
-    archive_pack = do_pack()
-    if archive_pack is None:
-        return False
-    deployed = do_deploy(archive_pack)
-    return deployed
+    """Creates and Distributes a .tgz archive through web servers
+    """
+
+    archive = do_pack()
+    return do_deploy(archive)
