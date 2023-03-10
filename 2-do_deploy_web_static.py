@@ -9,6 +9,16 @@ env.hosts = ['18.209.7.164', '54.211.25.155']
 env.user = ['ubuntu']
 
 
+def do_pack():
+    """Comm"""
+    local("mkdir -p versions")
+    result = local("tar -cvzf versions/web_static_{}.tgz web_static"
+                   .format(datetime.strftime(datetime.now(), "%Y%m%d%H%M%S")),
+                   capture=True)
+    if result.failed:
+        return None
+    return result
+
 def do_deploy(archive_path):
     """Distribute an archive to the web servers."""
     if os.path.isfile(archive_path) is False:
