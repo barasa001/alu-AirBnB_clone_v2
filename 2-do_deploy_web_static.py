@@ -5,7 +5,7 @@ from fabric.api import *
 import os
 import shlex
 
-env.hosts = ['18.209.7.164', '54.211.25.155']
+env.hosts = ['34.229.149.26', '54.211.25.155']
 
 
 def do_deploy(archive_path):
