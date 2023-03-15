@@ -11,6 +11,7 @@ app = Flask(__name__)
 def states_list():
     """ list of all State objects present in DBStorage
     sorted by name"""
+    states = storage.all(State)
     dict_to_html = {value.id: value.name for value in states.values()}
     return render_template('7-states_list.html',
                            Table="States",
