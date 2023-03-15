@@ -19,7 +19,7 @@ def states_list():
 
 @app.teardown_appcontext
 def teardown(exc):
-    """close alchemy session"""
+    """close the alchemy session"""
     storage.close()
 
 
