@@ -36,6 +36,7 @@ class Place(BaseModel, Base):
     price_by_night = Column(Integer, nullable=False, default=0)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
+    id = Column(String(60), nullable=False, primary_key=True)
 
     # create amenity_ids list to store all Amenity.id linked to the Place
     amenity_id = []
